@@ -1,10 +1,9 @@
 // link: https://www.kavaliro.com/wp-content/uploads/2014/03/AES.pdf
+// for debugging: https://www.cryptool.org/en/cto/aes-step-by-step
 
 class AES {
 
-    constructor(data, keyText) {
-        this.data = data;
-
+    constructor(keyText) {
         // Chuyển đổi khóa từ chuỗi hex thành một mảng byte
         const key = [];
         for (let i = 0; i < keyText.length; i++) {
@@ -13,9 +12,9 @@ class AES {
 
         this.expandedKey = this.keyExpansion(key);
 
-        // convert to hex
-        const hex = this.expandedKey.map(w => w.map(b => b.toString(16).padStart(2, '0')).join(' ')).join('\n');
-        console.log('Khóa mở rộng', hex);
+        // // convert to hex
+        // const hex = this.expandedKey.map(w => w.map(b => b.toString(16).padStart(2, '0')).join(' ')).join('\n');
+        // console.log('Khóa mở rộng', hex);
     }
 
     Sbox = [
@@ -52,6 +51,25 @@ class AES {
         0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68,
         0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16
     ];
+
+    invSbox = [
+        0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e, 0x81, 0xf3, 0xd7, 0xfb, 
+        0x7c, 0xe3, 0x39, 0x82, 0x9b, 0x2f, 0xff, 0x87, 0x34, 0x8e, 0x43, 0x44, 0xc4, 0xde, 0xe9, 0xcb, 
+        0x54, 0x7b, 0x94, 0x32, 0xa6, 0xc2, 0x23, 0x3d, 0xee, 0x4c, 0x95, 0x0b, 0x42, 0xfa, 0xc3, 0x4e, 
+        0x08, 0x2e, 0xa1, 0x66, 0x28, 0xd9, 0x24, 0xb2, 0x76, 0x5b, 0xa2, 0x49, 0x6d, 0x8b, 0xd1, 0x25, 
+        0x72, 0xf8, 0xf6, 0x64, 0x86, 0x68, 0x98, 0x16, 0xd4, 0xa4, 0x5c, 0xcc, 0x5d, 0x65, 0xb6, 0x92, 
+        0x6c, 0x70, 0x48, 0x50, 0xfd, 0xed, 0xb9, 0xda, 0x5e, 0x15, 0x46, 0x57, 0xa7, 0x8d, 0x9d, 0x84, 
+        0x90, 0xd8, 0xab, 0x00, 0x8c, 0xbc, 0xd3, 0x0a, 0xf7, 0xe4, 0x58, 0x05, 0xb8, 0xb3, 0x45, 0x06, 
+        0xd0, 0x2c, 0x1e, 0x8f, 0xca, 0x3f, 0x0f, 0x02, 0xc1, 0xaf, 0xbd, 0x03, 0x01, 0x13, 0x8a, 0x6b, 
+        0x3a, 0x91, 0x11, 0x41, 0x4f, 0x67, 0xdc, 0xea, 0x97, 0xf2, 0xcf, 0xce, 0xf0, 0xb4, 0xe6, 0x73, 
+        0x96, 0xac, 0x74, 0x22, 0xe7, 0xad, 0x35, 0x85, 0xe2, 0xf9, 0x37, 0xe8, 0x1c, 0x75, 0xdf, 0x6e, 
+        0x47, 0xf1, 0x1a, 0x71, 0x1d, 0x29, 0xc5, 0x89, 0x6f, 0xb7, 0x62, 0x0e, 0xaa, 0x18, 0xbe, 0x1b, 
+        0xfc, 0x56, 0x3e, 0x4b, 0xc6, 0xd2, 0x79, 0x20, 0x9a, 0xdb, 0xc0, 0xfe, 0x78, 0xcd, 0x5a, 0xf4, 
+        0x1f, 0xdd, 0xa8, 0x33, 0x88, 0x07, 0xc7, 0x31, 0xb1, 0x12, 0x10, 0x59, 0x27, 0x80, 0xec, 0x5f, 
+        0x60, 0x51, 0x7f, 0xa9, 0x19, 0xb5, 0x4a, 0x0d, 0x2d, 0xe5, 0x7a, 0x9f, 0x93, 0xc9, 0x9c, 0xef, 
+        0xa0, 0xe0, 0x3b, 0x4d, 0xae, 0x2a, 0xf5, 0xb0, 0xc8, 0xeb, 0xbb, 0x3c, 0x83, 0x53, 0x99, 0x61, 
+        0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d
+    ]
 
     Rcon = [
         0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a,
@@ -92,7 +110,6 @@ class AES {
             for (let j = 0; j < 4; j++) {
                 w[i][j] = w[i - Nk][j] ^ temp[j];
             }
-            console.log(w[i]);
         }
 
         return w;
@@ -115,8 +132,175 @@ class AES {
         return word;
     }
 
-    encypt() {
-        
+    showOneDimensionalArrayInHex(arr) {
+        return arr.map(b => b.toString(16).padStart(2, '0')).join(' ');
+    }
+
+    showTwoDimensionalArrayInHex(arr) {
+        return arr.map(w => w.map(b => b.toString(16).padStart(2, '0')).join(' ')).join('\n');
+    }
+
+    encrypt(data) {
+        const bytes = [];
+        for (let i = 0; i < data.length; i++) {
+            bytes.push(parseInt(this.textToHex(data[i]), 16));
+        }
+
+        let state = new Array(4);
+        for (let i = 0; i < 4; i++) {
+            state[i] = new Array(4);
+            for (let j = 0; j < 4; j++) {
+                state[i][j] = bytes[i + 4 * j];
+            }
+        }
+
+       //  console.log('Mảng trạng thái ban đầu',"\n", this.showTwoDimensionalArrayInHex(state));
+        state = this.addRoundKey(state, 0);
+
+        for (let round = 1; round < 10; round++) {
+            state = this.subBytes(state);
+            state = this.shiftRows(state);
+            state = this.mixColumns(state);
+            state = this.addRoundKey(state, round);
+        }
+
+        state = this.subBytes(state);
+        state = this.shiftRows(state);
+        state = this.addRoundKey(state, 10);
+
+        return state;
+    }
+
+    addRoundKey(state, round) {
+        for (let i = 0; i < 4; i++) {
+            for (let j = 0; j < 4; j++) {
+                state[i][j] ^= this.expandedKey[round * 4 + j][i];
+            }
+        }
+        return state;
+    }
+
+    subBytes(state) {
+        for (let i = 0; i < 4; i++) {
+            for (let j = 0; j < 4; j++) {
+                state[i][j] = this.Sbox[state[i][j]];
+            }
+        }
+        return state;
+    }
+
+    shiftRows(state) {
+        const temp = new Array(4);
+        for (let i = 1; i < 4; i++) {
+            for (let j = 0; j < 4; j++) {
+                temp[j] = state[i][(j + i) % 4];
+            }
+            for (let j = 0; j < 4; j++) {
+                state[i][j] = temp[j];
+            }
+        }
+        return state;
+    }
+
+    mixColumns(state) {
+        const temp = new Array(4);
+        for (let i = 0; i < 4; i++) {
+            temp[0] = this.gmul(0x02, state[0][i]) ^ this.gmul(0x03, state[1][i]) ^ state[2][i] ^ state[3][i];
+            temp[1] = state[0][i] ^ this.gmul(0x02, state[1][i]) ^ this.gmul(0x03, state[2][i]) ^ state[3][i];
+            temp[2] = state[0][i] ^ state[1][i] ^ this.gmul(0x02, state[2][i]) ^ this.gmul(0x03, state[3][i]);
+            temp[3] = this.gmul(0x03, state[0][i]) ^ state[1][i] ^ state[2][i] ^ this.gmul(0x02, state[3][i]);
+            for (let j = 0; j < 4; j++) {
+                state[j][i] = temp[j];
+            }
+        }
+        return state;
+    }
+
+    gmul(a, b) {
+        let p = 0;
+        for (let i = 0; i < 8; i++) {
+            if (b & 1) {
+                p ^= a;
+            }
+            const hiBitSet = a & 0x80;
+            a <<= 1;
+            if (hiBitSet) {
+                a ^= 0x1b; /* x^8 + x^4 + x^3 + x + 1 */
+            }
+            b >>= 1;
+        }
+        return p & 0xff;
+    }
+
+    decrypt(state) {
+
+        console.log('Mảng trạng thái sau khi mã hóa', "\n", this.showTwoDimensionalArrayInHex(state));
+
+        state = this.addRoundKey(state, 10);
+
+        for (let round = 9; round > 0; round--) {
+            state = this.invShiftRows(state);
+            state = this.invSubBytes(state);
+            state = this.addRoundKey(state, round);
+            state = this.invMixColumns(state);
+        }
+
+        state = this.invShiftRows(state);
+        state = this.invSubBytes(state);
+        state = this.addRoundKey(state, 0);
+
+        console.log('Mảng trạng thái sau khi giải mã',"\n", this.showTwoDimensionalArrayInHex(state));
+    }
+
+    invSubBytes(state) {
+        for (let i = 0; i < 4; i++) {
+            for (let j = 0; j < 4; j++) {
+                state[i][j] = this.invSbox[state[i][j]];
+            }
+        }
+        return state;
+    }
+
+    invShiftRows(state) {
+        const temp = new Array(4);
+        for (let i = 1; i < 4; i++) {
+            for (let j = 0; j < 4; j++) {
+                temp[j] = state[i][(j - i + 4) % 4];
+            }
+            for (let j = 0; j < 4; j++) {
+                state[i][j] = temp[j];
+            }
+        }
+        return state;
+    }
+
+    invMixColumns(state) {
+
+        // // state = [
+        // //     [0x47, 0x37, 0x94, 0xED],
+        // //     [0x40, 0xd4, 0xe4, 0xa5],
+        // //     [0xa3, 0x70, 0x3a, 0xa6],
+        // //     [0x4c, 0x9f, 0x42, 0xbc],
+        // // ]
+
+        // state = [
+        //     [0x47, 0x40, 0xa3, 0x4c],
+        //     [0x37, 0xd4, 0x70, 0x9f],
+        //     [0x94, 0xe4, 0x3a, 0x42],
+        //     [0xed, 0xa5, 0xa6, 0xbc],
+        // ]
+
+        const temp = new Array(4);
+        for (let i = 0; i < 4; i++) {
+            temp[0] = this.gmul(0x0e, state[0][i]) ^ this.gmul(0x0b, state[1][i]) ^ this.gmul(0x0d, state[2][i]) ^ this.gmul(0x09, state[3][i]);
+            temp[1] = this.gmul(0x09, state[0][i]) ^ this.gmul(0x0e, state[1][i]) ^ this.gmul(0x0b, state[2][i]) ^ this.gmul(0x0d, state[3][i]);
+            temp[2] = this.gmul(0x0d, state[0][i]) ^ this.gmul(0x09, state[1][i]) ^ this.gmul(0x0e, state[2][i]) ^ this.gmul(0x0b, state[3][i]);
+            temp[3] = this.gmul(0x0b, state[0][i]) ^ this.gmul(0x0d, state[1][i]) ^ this.gmul(0x09, state[2][i]) ^ this.gmul(0x0e, state[3][i]);
+            for (let j = 0; j < 4; j++) {
+                state[j][i] = temp[j];
+            }
+        }
+        return state;
     }
 }
 
