@@ -8,12 +8,12 @@ class AES {
             throw new Error('Key must be 16 characters long');
         }
 
-        const key = [];
-        for (let i = 0; i < keyText.length; i++) {
-            key.push(parseInt(this.textToHex(keyText[i]), 16));
-        }
+        const hexString = this.textToHex(keyText);
+        const bytes = hexString.split(" ").map((hex) => {
+            parseInt(hex, 16)
+        })
 
-        this.expandedKey = this.keyExpansion(key);
+        this.expandedKey = this.keyExpansion(bytes);
     }
 
     Sbox = [
@@ -94,18 +94,23 @@ class AES {
     ];
 
     textToHex(text) {
-        let hex = '';
-        for (let i = 0; i < text.length; i++) {
-            hex += text.charCodeAt(i).toString(16).padStart(2, '0');
+        const utf8Bytes = new TextEncoder().encode(text);
+        let hexString = '';
+        for (let i = 0; i < utf8Bytes.length; i++) {
+            hexString += utf8Bytes[i].toString(16).padStart(2, '0');
+            if (i != utf8Bytes.length - 1) {
+                hexString += ' ';
+            }
         }
-        return hex;
+        return hexString;
     }
 
-    hexToText(hex) {
-        let text = '';
-        for (let i = 0; i < hex.length; i += 2) {
-            text += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+    hexToText(hexString) {
+        let utf8Bytes = [];
+        for (let i = 0; i < hexString.length; i += 2) {
+            utf8Bytes.push(parseInt(hexString.substr(i, 2), 16));
         }
+        const text = new TextDecoder().decode(new Uint8Array(utf8Bytes));
         return text;
     }
 
@@ -276,11 +281,10 @@ class AES {
     }
 
     separateIntoStateBlocks(plainText) {
-        let bytes = [];
-        for (let i = 0; i < plainText.length; i++) {
-            const hex = this.textToHex(plainText[i]);
-            bytes.push(parseInt(hex, 16));
-        }
+        const hexString = this.textToHex(plainText);
+        let bytes = hexString.split(" ").map((hex) => {
+            return parseInt(hex, 16);
+        });
 
         const stateBlocks = [];
         for (let i = 0; i < bytes.length; i += 16) {
