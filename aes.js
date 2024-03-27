@@ -10,8 +10,8 @@ class AES {
 
         const hexString = this.textToHex(keyText);
         const bytes = hexString.split(" ").map((hex) => {
-            parseInt(hex, 16)
-        })
+            return parseInt(hex, 16)
+        });
 
         this.expandedKey = this.keyExpansion(bytes);
     }
