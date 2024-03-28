@@ -32,11 +32,6 @@ connection.query(
         return console.log(err.message);
     }
 
-    // check if table was created
-    if (results.affectedRows === 0) {
-        return console.log("Table users already exists");
-    }
-
     console.log("Create table users success");
 
     let isErrorOccurred = false;
@@ -51,7 +46,8 @@ connection.query(
         connection.query(query, function (err) {
             if (err) {
                 isErrorOccurred = true;
-                return console.log(err.message);
+                // console.log(err.message);
+                return;
             }
         });
     });
@@ -62,13 +58,13 @@ connection.query(
 });
 
 app.post('/auth/sign-up', function (req, res) {
-    const encryptedBody = req.body
+    const encryptedData = req.body
 
-    console.log("encryptedBody: ", encryptedBody);
+    console.log("encryptedData: ", encryptedData);
 
     const rawData = {};
-    for (let key in encryptedBody) {
-        rawData[key] = AES.decrypt(encryptedBody[key]);
+    for (let key in encryptedData) {
+        rawData[key] = AES.decrypt(encryptedData[key]);
     }
 
     console.log("rawData: ", rawData);
@@ -95,10 +91,13 @@ app.post('/auth/sign-up', function (req, res) {
 });
 
 app.post('/auth/sign-in', function (req, res) {
-    const encryptedBody = req.body
+    const encryptedData = req.body
+
+    console.log("encryptedData: ", encryptedData);
+
     const rawData = {};
-    for (let key in encryptedBody) {
-        rawData[key] = AES.decrypt(encryptedBody[key]);
+    for (let key in encryptedData) {
+        rawData[key] = AES.decrypt(encryptedData[key]);
     }
 
     // get user from database
@@ -120,6 +119,30 @@ app.post('/auth/sign-in', function (req, res) {
         }
 
         res.status(200).send("Sign in success");
+    });
+});
+
+app.get('/user/fetch-all-users/:userId', function (req, res) {
+
+    const userId = req.params.userId;
+
+    const query = `SELECT 
+        citizenIdentificationCard, 
+        CASE WHEN citizenIdentificationCard = '${userId}' THEN userName ELSE '*****' END AS userName,
+        CASE WHEN citizenIdentificationCard = '${userId}' THEN password ELSE '*****' END AS password, 
+        CASE WHEN citizenIdentificationCard = '${userId}' THEN gender ELSE '*****' END AS gender, 
+        CASE WHEN citizenIdentificationCard = '${userId}' THEN dateOfBirth ELSE '*****' END AS dateOfBirth, 
+        CASE WHEN citizenIdentificationCard = '${userId}' THEN address ELSE '*****' END AS address, 
+        CASE WHEN citizenIdentificationCard = '${userId}' THEN phoneNumber ELSE '*****' END AS phoneNumber 
+        FROM users`;
+
+    connection.query(query, function (err, results) {
+        if (err) {
+            res.status(500).send("Get users failed");
+            return console.log(err.message);
+        }
+
+        res.status(200).send(results);
     });
 });
 

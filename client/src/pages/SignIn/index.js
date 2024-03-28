@@ -5,12 +5,8 @@ import Loader from "../../components/Loader";
 import AlertError from "../../components/AlertError";
 import authService from "../../services/auth.service";
 import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { setUser } from "../../slices/user.slice";
 
 const SignIn = () => {
-
-    const dispatch = useDispatch();
 
     const navigate = useNavigate();
 
@@ -30,8 +26,8 @@ const SignIn = () => {
 
         authService.signIn(userName, password)
             .then(() => {
-                dispatch(setUser(userName));
-                navigate("/trang-chu");
+                localStorage.setItem("user", userName);
+                window.location.href = "/trang-chu";
             })
             .catch((error) => {
                 const message = error?.response?.data;
