@@ -366,7 +366,10 @@ class AES {
             let hexText = ""
             for (let i = 0; i < 4; i++) {
                 for (let j = 0; j < 4; j++) {
-                    hexText += decryptedStateBlock[j][i].toString(16).padStart(2, '0');
+                    const hexChar = decryptedStateBlock[j][i].toString(16).padStart(2, '0');
+                    if (hexChar !== '00') {
+                        hexText += hexChar;
+                    }
                 }
             }
 
@@ -375,7 +378,7 @@ class AES {
 
         const plainText = this.hexToText(hexResult);
 
-        console.log('plainText:', plainText);
+        // console.log('plainText:', plainText);
 
         return plainText;
     }
