@@ -277,6 +277,8 @@ class AES {
         state = this.shiftRows(state);
         state = this.addRoundKey(state, 10);
 
+        state = this.xorArrays2D(this.initialVector, state)
+
         return state;
     }
 
@@ -325,11 +327,59 @@ class AES {
         return block;
     }
 
-    encrypt(data) {
+    convertToTwoDimensionalArray(array) {
+        let block = new Array(4);
+        for (let i = 0; i < 4; i++) {
+            block[i] = new Array(4);
+            for (let j = 0; j < 4; j++) {
+                block[i][j] = array[i + 4 * j];
+            }
+        }
+        return block;
+    }
+
+    intiInitialVector(initialVector) {
+        const hexString = this.textToHex(initialVector);
+
+        let bytes = hexString.split(" ").map((hex) => {
+            return parseInt(hex, 16)
+        });
+
+        if (bytes.length > 16) {
+            bytes = bytes.slice(0, 16);
+        } else if (bytes.length < 16) {
+            bytes = bytes.concat(new Array(16 - bytes.length).fill(0));
+        }
+
+        if (bytes.length !== 16) {
+            throw new Error('Invalid initial vector');
+        }
+
+        this.initialVector = this.convertToTwoDimensionalArray(bytes);
+    }
+
+    xorArrays2D(array1, array2) {
+        if (array1.length !== array2.length || array1[0].length !== array2[0].length) {
+            throw new Error("Arrays must have the same dimensions");
+        }
+
+        const result = [];
+        for (let i = 0; i < array1.length; i++) {
+            result.push([]);
+            for (let j = 0; j < array1[i].length; j++) {
+                result[i].push(array1[i][j] ^ array2[i][j]);
+            }
+        }
+        return result;
+    }
+
+    encrypt(data, initialVector) {
 
         if (!this.expandedKey) {
             throw new Error('Key not initialized');
         }
+
+        this.intiInitialVector(initialVector);
 
         const stateBlocks = this.separateIntoStateBlocks(data);
 
@@ -341,15 +391,18 @@ class AES {
         return cipherText;
     }
 
-    decrypt(cipherText) {
+    decrypt(cipherText, initialVector) {
 
         if (!this.expandedKey) {
             throw new Error('Key not initialized');
         }
 
+        this.intiInitialVector(initialVector);
+
         const array = cipherText.split(' ')
 
         if (array.length % 16 !== 0) {
+            console.log('array:', array)
             throw new Error('Invalid cipher text');
         }
 
@@ -384,6 +437,9 @@ class AES {
     }
 
     decryptStateBlock(state) {
+
+        state = this.xorArrays2D(this.initialVector, state)
+
         state = this.addRoundKey(state, 10);
 
         for (let round = 9; round > 0; round--) {

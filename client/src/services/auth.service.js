@@ -15,8 +15,9 @@ class AuthService {
     async signIn(citizenIdentificationCard, password) {
 
         const body = {
-            citizenIdentificationCard: AES.encrypt(citizenIdentificationCard),
-            password: AES.encrypt(password),
+            citizenIdentificationCard: AES.encrypt(citizenIdentificationCard, password),
+            password: AES.encrypt(password, password),
+            initialVector: password,
         }
 
         console.log(body);
@@ -29,13 +30,14 @@ class AuthService {
     async signUp(userName, password, citizenIdentificationCard, gender, dateOfBirth, address, phoneNumber) {
 
         const body = {
-            userName: AES.encrypt(userName),
-            password: AES.encrypt(password),
-            citizenIdentificationCard: AES.encrypt(citizenIdentificationCard),
-            gender: AES.encrypt(gender),
-            dateOfBirth: AES.encrypt(dateOfBirth),
-            address: AES.encrypt(address),
-            phoneNumber: AES.encrypt(phoneNumber),
+            userName: AES.encrypt(userName, password),
+            password: AES.encrypt(password, password),
+            citizenIdentificationCard: AES.encrypt(citizenIdentificationCard, password),
+            gender: AES.encrypt(gender, password),
+            dateOfBirth: AES.encrypt(dateOfBirth, password),
+            address: AES.encrypt(address, password),
+            phoneNumber: AES.encrypt(phoneNumber, password),
+            initialVector: password,
         }
 
         console.log(body);
