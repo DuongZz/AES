@@ -4,12 +4,7 @@ import { store } from "../redux/store";
 import { setUser } from "../slices/user.slice";
 import AES from "../security/aes";
 
-const secretKey = process.env.REACT_APP_SECRET_KEY || "1234567890abcdef"
-console.log("secretKey: ", secretKey);
-AES.init(secretKey);
-
 const API_URL = CONSTANT.baseUrl + "/auth/";
-
 class AuthService {
 
     async signIn(citizenIdentificationCard, password) {

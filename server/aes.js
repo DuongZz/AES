@@ -3,19 +3,27 @@
 
 class AES {
 
-    init(keyText) {
-        if (keyText.length !== 16) {
-            throw new Error('Key must be 16 characters long');
-        }
+    // Khởi tạo khóa
+    initKey(keyText) {
 
+        // Chuyển khóa từ text sang hex sau đó chuyển sang mảng byte
         const hexString = this.textToHex(keyText);
         const bytes = hexString.split(" ").map((hex) => {
             return parseInt(hex, 16)
         });
 
+        // Nếu khóa dài hơn 16 byte thì cắt bớt, ngược lại thêm 0 vào cuối
+        if (bytes.length > 16) {
+            bytes = bytes.slice(0, 16);
+        } else if (bytes.length < 16) {
+            bytes = bytes.concat(new Array(16 - bytes.length).fill(0));
+        }
+
+        // Khởi tạo các khóa con từ khóa gốc
         this.expandedKey = this.keyExpansion(bytes);
     }
 
+    // Sbox sử dụng cho pha subBytes
     Sbox = [
         0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5,
         0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
@@ -51,6 +59,7 @@ class AES {
         0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16
     ];
 
+    // Invert Sbox sử dụng cho pha invSubBytes
     invSbox = [
         0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 
         0xbf, 0x40, 0xa3, 0x9e, 0x81, 0xf3, 0xd7, 0xfb, 
@@ -86,6 +95,7 @@ class AES {
         0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d
     ]
 
+    // Rcon sử dụng cho pha keyExpansion ( sinh khóa con )
     Rcon = [
         0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 
         0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a,
@@ -93,6 +103,7 @@ class AES {
         0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91
     ];
 
+    // Chuyển text sang hex
     textToHex(text) {
         const utf8Bytes = new TextEncoder().encode(text);
         let hexString = '';
@@ -105,6 +116,7 @@ class AES {
         return hexString;
     }
 
+    // Chuyển hex sang text
     hexToText(hexString) {
         let utf8Bytes = [];
         for (let i = 0; i < hexString.length; i += 2) {
@@ -114,6 +126,7 @@ class AES {
         return text;
     }
 
+    // Tạo các khóa con từ khóa gốc
     keyExpansion(key) {
         const Nk = 4; // Số từ trong khóa (128 bit key có 4 từ)
         const Nb = 4; // Số cột trong mảng trạng thái
@@ -145,6 +158,7 @@ class AES {
         return w;
     }
 
+    // Hàm thực hiện phép thay thế byte
     subWord(word) {
         for (let i = 0; i < 4; i++) {
             word[i] = this.Sbox[word[i]];
@@ -162,6 +176,7 @@ class AES {
         return word;
     }
 
+    // Hàm so state với khóa con
     addRoundKey(state, round) {
         for (let i = 0; i < 4; i++) {
             for (let j = 0; j < 4; j++) {
@@ -171,6 +186,7 @@ class AES {
         return state;
     }
 
+    // Hàm thực hiện phép thay thế byte
     subBytes(state) {
         for (let i = 0; i < 4; i++) {
             for (let j = 0; j < 4; j++) {
@@ -180,6 +196,7 @@ class AES {
         return state;
     }
 
+    // Hàm thực hiện phép dịch hàng
     shiftRows(state) {
         const temp = new Array(4);
         for (let i = 1; i < 4; i++) {
@@ -193,6 +210,7 @@ class AES {
         return state;
     }
 
+    // Hàm mixColumns thực hiện phép nhân 2 ma trận
     mixColumns(state) {
         const temp = new Array(4);
         for (let i = 0; i < 4; i++) {
@@ -207,6 +225,7 @@ class AES {
         return state;
     }
 
+    // Hàm sử dụng cho pha mixColumns
     gmul(a, b) {
         let p = 0;
         for (let i = 0; i < 8; i++) {
@@ -223,6 +242,7 @@ class AES {
         return p & 0xff;
     }
 
+    // invert subBytes
     invSubBytes(state) {
         for (let i = 0; i < 4; i++) {
             for (let j = 0; j < 4; j++) {
@@ -232,6 +252,7 @@ class AES {
         return state;
     }
 
+    // invert shiftRows
     invShiftRows(state) {
         const temp = new Array(4);
         for (let i = 1; i < 4; i++) {
@@ -245,6 +266,7 @@ class AES {
         return state;
     }
 
+    // invert mixColumns
     invMixColumns(state) {
         const temp = new Array(4);
         for (let i = 0; i < 4; i++) {
@@ -259,29 +281,8 @@ class AES {
         return state;
     }
 
-    encryptStateBlock(state) {
-        if (state.length !== 4 || state[0].length !== 4) {
-            throw new Error('Invalid state');
-        }
-
-        state = this.addRoundKey(state, 0);
-
-        for (let round = 1; round < 10; round++) {
-            state = this.subBytes(state);
-            state = this.shiftRows(state);
-            state = this.mixColumns(state);
-            state = this.addRoundKey(state, round);
-        }
-
-        state = this.subBytes(state);
-        state = this.shiftRows(state);
-        state = this.addRoundKey(state, 10);
-
-        state = this.xorArrays2D(this.initialVector, state)
-
-        return state;
-    }
-
+    // Hàm tách dữ liệu thành các block 128 bit
+    // Mỗi block 128 bit được biểu diễn bằng một mảng 4x4
     separateIntoStateBlocks(plainText) {
         const hexString = this.textToHex(plainText);
         let bytes = hexString.split(" ").map((hex) => {
@@ -313,11 +314,13 @@ class AES {
         return stateBlocks;
     }
 
+    // Hàm chuyển block mảng 2 chiều thành hex text
     stateBlockToText(stateBlock) {
         const text = stateBlock.map(w => w.map(b => b.toString(16).padStart(2, '0')).join(' ')).join(' ');
         return text;
     }
 
+    // Hàm chuyển hex text thành block mảng 2 chiều
     textToStateBlock(text) {
         const bytes = text.split(' ').map(b => parseInt(b, 16));
         const block = new Array(4);
@@ -327,6 +330,7 @@ class AES {
         return block;
     }
 
+    // Hàm chuyển từ mảng 1 chiều thành mảng 2 chiều
     convertToTwoDimensionalArray(array) {
         let block = new Array(4);
         for (let i = 0; i < 4; i++) {
@@ -338,26 +342,34 @@ class AES {
         return block;
     }
 
-    intiInitialVector(initialVector) {
-        const hexString = this.textToHex(initialVector);
+    // Hàm khởi tạo initial Vector từ plain text
+    intiInitialVector(initialVectorText) {
 
+        // convert sang hex text
+        const hexString = this.textToHex(initialVectorText);
+
+        // convert sang mảng byte
         let bytes = hexString.split(" ").map((hex) => {
             return parseInt(hex, 16)
         });
 
+        // Nếu initial vector dài hơn 16 byte thì cắt bớt, ngược lại thêm 0 vào cuối
         if (bytes.length > 16) {
             bytes = bytes.slice(0, 16);
         } else if (bytes.length < 16) {
             bytes = bytes.concat(new Array(16 - bytes.length).fill(0));
         }
 
+        // Kiểm tra initial vector có đúng 16 byte không
         if (bytes.length !== 16) {
             throw new Error('Invalid initial vector');
         }
 
+        // Chuyển sang mảng 2 chiều
         this.initialVector = this.convertToTwoDimensionalArray(bytes);
     }
 
+    // Hàm thực hiện phép XOR cho 2 mảng 2 chiều
     xorArrays2D(array1, array2) {
         if (array1.length !== array2.length || array1[0].length !== array2[0].length) {
             throw new Error("Arrays must have the same dimensions");
@@ -373,70 +385,35 @@ class AES {
         return result;
     }
 
-    encrypt(data, initialVector) {
-
-        if (!this.expandedKey) {
-            throw new Error('Key not initialized');
+    // Hàm thực hiện phép mã hóa cho một block dữ liệu 128 bit
+    encryptStateBlock(state) {
+        if (state.length !== 4 || state[0].length !== 4) {
+            throw new Error('Invalid state');
         }
 
-        this.intiInitialVector(initialVector);
+        state = this.addRoundKey(state, 0);
 
-        const stateBlocks = this.separateIntoStateBlocks(data);
+        for (let round = 1; round < 10; round++) {
+            state = this.subBytes(state);
+            state = this.shiftRows(state);
+            state = this.mixColumns(state);
+            state = this.addRoundKey(state, round);
+        }
 
-        const cipherText = stateBlocks.map(state => {
-            const stateBlock = this.encryptStateBlock(state);
-            return this.stateBlockToText(stateBlock);
-        }).join(' ');
-        console.log('cipherText:', cipherText);
-        return cipherText;
+        state = this.subBytes(state);
+        state = this.shiftRows(state);
+        state = this.addRoundKey(state, 10);
+
+        // XOR với initial vector để tăng độ bảo mật
+        state = this.xorArrays2D(this.initialVector, state)
+
+        return state;
     }
 
-    decrypt(cipherText, initialVector) {
-
-        if (!this.expandedKey) {
-            throw new Error('Key not initialized');
-        }
-
-        this.intiInitialVector(initialVector);
-
-        const array = cipherText.split(' ')
-
-        if (array.length % 16 !== 0) {
-            throw new Error('Invalid cipher text');
-        }
-
-        const stateBlocks = [];
-        for (let i = 0; i < array.length; i+=16) {
-            const subArray = array.slice(i, i + 16);
-            const stateBlock = this.textToStateBlock(subArray.join(' '));
-            stateBlocks.push(stateBlock);
-        }
-
-        const hexResult = stateBlocks.map(state => {
-            const decryptedStateBlock = this.decryptStateBlock(state);
-
-            let hexText = ""
-            for (let i = 0; i < 4; i++) {
-                for (let j = 0; j < 4; j++) {
-                    const hexChar = decryptedStateBlock[j][i].toString(16).padStart(2, '0');
-                    if (hexChar !== '00') {
-                        hexText += hexChar;
-                    }
-                }
-            }
-
-            return hexText;
-        }).join('');
-
-        const plainText = this.hexToText(hexResult);
-
-        // console.log('plainText:', plainText);
-
-        return plainText;
-    }
-
+    // Hàm thực hiện phép giải mã cho một block dữ liệu 128 bit
     decryptStateBlock(state) {
 
+        // XOR với initial vector trước ( theo thuật toán mã hóa )
         state = this.xorArrays2D(this.initialVector, state)
 
         state = this.addRoundKey(state, 10);
@@ -453,6 +430,81 @@ class AES {
         state = this.addRoundKey(state, 0);
 
         return state;
+    }
+
+    // Hàm mã hóa dữ liệu
+    encrypt(data, initialVector) {
+
+        // Lấy secret key từ biến môi trường hoặc sử dụng mặc định
+        const secretKey = process.env.SECRET_KEY || "This is a secret key";
+
+        // Khởi tạo khóa
+        this.initKey(secretKey);
+
+        // Khởi tạo initial vector
+        this.intiInitialVector(initialVector);
+
+        // Tách dữ liệu thành các block nhỏ 128 bit
+        const stateBlocks = this.separateIntoStateBlocks(data);
+
+        // Mã hóa từng block dữ liệu và chuyển kết quả sang hex text
+        const cipherText = stateBlocks.map(state => {
+            const stateBlock = this.encryptStateBlock(state);
+            return this.stateBlockToText(stateBlock);
+        }).join(' ');
+
+        // trả về kết quả mã hóa dưới dạng hex text
+        return cipherText;
+    }
+
+    // Hàm giải mã dữ liệu
+    decrypt(cipherText, initialVector) {
+
+        // Lấy secret key từ biến môi trường hoặc sử dụng mặc định
+        const secretKey = process.env.SECRET_KEY || "This is a secret key";
+
+        // Khởi tạo khóa
+        this.initKey(secretKey);
+
+        // Khởi tạo initial vector
+        this.intiInitialVector(initialVector);
+
+        const array = cipherText.split(' ')
+
+        // Độ dài mảng phải là bội số của 16
+        if (array.length % 16 !== 0) {
+            throw new Error('Invalid cipher text');
+        }
+
+        // Chuyển hex text thành block các mảng 2 chiều có kích thước 4x4
+        const stateBlocks = [];
+        for (let i = 0; i < array.length; i+=16) {
+            const subArray = array.slice(i, i + 16);
+            const stateBlock = this.textToStateBlock(subArray.join(' '));
+            stateBlocks.push(stateBlock);
+        }
+
+        // Thực hiện giải mã từng block dữ liệu và chuyển kết quả sang hex text
+        const hexResult = stateBlocks.map(state => {
+            const decryptedStateBlock = this.decryptStateBlock(state);
+
+            let hexText = ""
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    const hexChar = decryptedStateBlock[j][i].toString(16).padStart(2, '0');
+                    if (hexChar !== '00') {
+                        hexText += hexChar;
+                    }
+                }
+            }
+
+            return hexText;
+        }).join('');
+
+        // Chuyển từ hex text sang text
+        const plainText = this.hexToText(hexResult);
+
+        return plainText;
     }
 }
 

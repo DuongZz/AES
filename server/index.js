@@ -13,9 +13,6 @@ const { connection } = require('./database');
 
 // setup thuật toán mã hóa
 var AES = require('./aes');
-const secretKey = process.env.SECRET_KEY || "1234567890abcdef"
-console.log("secretKey: ", secretKey);
-AES.init(secretKey);
 
 // api
 app.post('/auth/sign-up', function (req, res) {
