@@ -402,7 +402,6 @@ class AES {
         const array = cipherText.split(' ')
 
         if (array.length % 16 !== 0) {
-            console.log('array:', array)
             throw new Error('Invalid cipher text');
         }
 
