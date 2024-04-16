@@ -5,10 +5,14 @@ import Loader from "../../components/Loader";
 import AlertError from "../../components/AlertError";
 import authService from "../../services/auth.service";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { setUsers } from "../../slices/user.slice";
 
 const SignIn = () => {
 
     const navigate = useNavigate();
+
+    const dispatch = useDispatch();
 
     const [userName, setUserName] = useState("");
     const [password, setPassword] = useState("");
@@ -25,9 +29,10 @@ const SignIn = () => {
         setWaitingForServer(true);
 
         authService.signIn(userName, password)
-            .then(() => {
+            .then((res) => {
+                dispatch(setUsers(res.data));
                 localStorage.setItem("user", userName);
-                window.location.href = "/trang-chu";
+                navigate("/trang-chu");
             })
             .catch((error) => {
                 const message = error?.response?.data;

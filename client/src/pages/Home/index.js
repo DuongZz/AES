@@ -1,19 +1,25 @@
 import React, { useState, useEffect } from "react";
 import styles from "./home.module.scss";
 import userService from "../../services/user.service";
+import { selectUsers } from "../../slices/user.slice";
+import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
 function Home() {
 
-    const [data, setData] = useState([]);
+    const navigate = useNavigate();
+    // const [data, setData] = useState([]);
 
-    useEffect(() => {
-        const user = localStorage.getItem("user");
-        userService.fetchAllUsers(user).then((response) => {
-            setData(response.data);
-        }).catch((err) => {
-            alert("Đã có lỗi xảy ra. Vui lòng thử lại sau.");
-        });
-    }, []);
+    // useEffect(() => {
+    //     const user = localStorage.getItem("user");
+    //     userService.fetchAllUsers(user).then((response) => {
+    //         setData(response.data);
+    //     }).catch((err) => {
+    //         alert("Đã có lỗi xảy ra. Vui lòng thử lại sau.");
+    //     });
+    // }, []);
+
+    const users = useSelector(selectUsers);
 
     return (
         <div className={styles.root}>
@@ -22,7 +28,7 @@ function Home() {
                 className={styles.logoutButton}
                 onClick={() => {
                     localStorage.removeItem("user");
-                    window.location.href = "/";
+                    navigate("/")
                 }}
             >Đăng xuất</button>
             <div className={styles.tableContainer}>
@@ -40,7 +46,7 @@ function Home() {
                     </thead>
                     <tbody>
                         {
-                            data.map((item, index) => {
+                            users.users.map((item, index) => {
                                 return (
                                     <tr key={index}>
                                         {

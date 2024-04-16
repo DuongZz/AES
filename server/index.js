@@ -16,25 +16,22 @@ var AES = require('./aes');
 
 // api
 app.post('/auth/sign-up', function (req, res) {
-    const encryptedData = req.body
-    const { initialVector } = encryptedData;
 
-    console.log("encryptedData: ", encryptedData);
+    const { userName, password, citizenIdentificationCard, gender, dateOfBirth, address, phoneNumber } = req.body;
 
-    const rawData = {};
-    for (let key in encryptedData) {
-        if (key == "initialVector") {
-            continue;
-        }
-        rawData[key] = AES.decrypt(encryptedData[key], initialVector);
-    }
-
-    console.log("rawData: ", rawData);
-
-    const { userName, password, citizenIdentificationCard, gender, dateOfBirth, address, phoneNumber } = rawData;
+    const encryptedData = {};
+    encryptedData.encryptedUserName = AES.encrypt(userName, password);
+    encryptedData.encryptedPassword = AES.encrypt(password, password);
+    encryptedData.encryptedGender = AES.encrypt(gender, password);
+    encryptedData.encryptedDateOfBirth = AES.encrypt(dateOfBirth, password);
+    encryptedData.encryptedAddress = AES.encrypt(address, password);
+    encryptedData.encryptedPhoneNumber = AES.encrypt(phoneNumber, password);
 
     // insert user to database
-    const query = `INSERT INTO users (citizenIdentificationCard, userName, password, gender, dateOfBirth, address, phoneNumber) VALUES ('${citizenIdentificationCard}', '${userName}', '${password}', '${gender}', '${dateOfBirth}', '${address}', '${phoneNumber}')`;
+    const query = `INSERT INTO users (citizenIdentificationCard, userName, password, gender, dateOfBirth, address, phoneNumber) 
+        VALUES ('${citizenIdentificationCard}', '${encryptedData.encryptedUserName}', '${encryptedData.encryptedPassword}', 
+        '${encryptedData.encryptedGender}', '${encryptedData.encryptedDateOfBirth}', '${encryptedData.encryptedAddress}', 
+        '${encryptedData.encryptedPhoneNumber}')`;
 
     connection.query(query, function (err, results, fields) {
         if (err) {
@@ -53,38 +50,45 @@ app.post('/auth/sign-up', function (req, res) {
 });
 
 app.post('/auth/sign-in', function (req, res) {
-    const encryptedData = req.body
-    const { initialVector } = encryptedData;
+    const { citizenIdentificationCard, password } = req.body
 
-    console.log("encryptedData: ", encryptedData);
+    const encryptedPassword = AES.encrypt(password, password);
 
-    const rawData = {};
-    for (let key in encryptedData) {
-        if (key == "initialVector") {
-            continue;
-        }
-        rawData[key] = AES.decrypt(encryptedData[key], initialVector);
-    }
-
-    // get user from database
-    console.log("rawData: ", rawData);
-
-    const { citizenIdentificationCard, password } = rawData;
-
-    const query = `SELECT * FROM users WHERE citizenIdentificationCard='${citizenIdentificationCard}' AND password='${password}'`;
+    const query = `SELECT * FROM users WHERE citizenIdentificationCard='${citizenIdentificationCard}' AND password='${encryptedPassword}'`;
 
     connection.query(query, function (err, results) {
         if (err) {
             res.status(500).send("Sign in failed");
             return console.log(err.message);
         }
-
         if (results.length === 0) {
             res.status(403).send("Tài khoản hoặc mật khẩu không đúng");
             return;
         }
+        const getAllUsersQuery = `SELECT * FROM users`;
+        connection.query(getAllUsersQuery, function (err, results) {
+            if (err) {
+                res.status(500).send("Get users failed");
+                return console.log(err.message);
+            }
 
-        res.status(200).send("Sign in success");
+            const users = results.map(user => {
+
+                const isCurrentUser = user.citizenIdentificationCard === citizenIdentificationCard;
+
+                return {
+                    citizenIdentificationCard: user.citizenIdentificationCard,
+                    userName: isCurrentUser ? AES.decrypt(user.userName, password) : '*****',
+                    password: isCurrentUser ? AES.decrypt(user.password, password) : '*****',
+                    gender: isCurrentUser ? AES.decrypt(user.gender, password) : '*****',
+                    dateOfBirth: isCurrentUser ? AES.decrypt(user.dateOfBirth, password) : '*****',
+                    address: isCurrentUser ? AES.decrypt(user.address, password) : '*****',
+                    phoneNumber: isCurrentUser ? AES.decrypt(user.phoneNumber, password) : '*****'
+                }
+            });
+
+            res.status(200).send(users);
+        });
     });
 });
 
